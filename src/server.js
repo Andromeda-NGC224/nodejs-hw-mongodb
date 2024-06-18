@@ -32,7 +32,7 @@ const setupServer = () => {
       data: contacts,
     })
   })
-  app.get('/contacts/:contactId', async (req, res, next) => {
+  app.get('/contacts/:contactId', async (req, res) => {
     const { contactId } = req.params
     const contact = await getContactById(contactId)
     if (!contact) {
@@ -47,7 +47,6 @@ const setupServer = () => {
       message: `Successfully found contact with id ${contactId}!`,
       data: contact,
     })
-    next()
   })
 
   app.use('*', (req, res) => {
