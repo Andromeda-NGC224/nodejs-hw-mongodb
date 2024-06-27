@@ -7,13 +7,23 @@ import {
   updateContactController,
 } from '../controllers/contactsController.js'
 import ctrlWrapper from '../utils/ctrlWrapper.js'
+import validateBody from '../utils/validateBody.js'
+
 import isValidId from '../middlewares/isValidId.js'
+import {
+  contactsAddJoiValid,
+  contactsPatchJoiValid,
+} from '../validation/contactsJoiValid.js'
 
 const contactsRouter = express.Router()
 
 contactsRouter.get('/', ctrlWrapper(getAllContactsController))
 
-contactsRouter.post('/', ctrlWrapper(createContactController))
+contactsRouter.post(
+  '/',
+  validateBody(contactsAddJoiValid),
+  ctrlWrapper(createContactController),
+)
 
 contactsRouter.get(
   '/:contactId',
@@ -21,7 +31,12 @@ contactsRouter.get(
   ctrlWrapper(getContactByIdController),
 )
 
-contactsRouter.patch('/:contactId', ctrlWrapper(updateContactController))
+contactsRouter.patch(
+  '/:contactId',
+  isValidId,
+  validateBody(contactsPatchJoiValid),
+  ctrlWrapper(updateContactController),
+)
 
 contactsRouter.delete(
   '/:contactId',

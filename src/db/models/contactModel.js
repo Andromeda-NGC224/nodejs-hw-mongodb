@@ -1,4 +1,6 @@
 import { Schema, model } from 'mongoose'
+import { contactType } from '../../constants/constants.js'
+
 const contactsSchema = new Schema(
   {
     name: {
@@ -18,7 +20,7 @@ const contactsSchema = new Schema(
     },
     contactType: {
       type: String,
-      enum: ['work', 'home', 'personal'],
+      enum: contactType,
       required: true,
       default: 'personal',
     },
@@ -29,4 +31,21 @@ const contactsSchema = new Schema(
   },
 )
 
+contactsSchema.post('save', (error, data, next) => {
+  // Для виправлення помилки 500 при невірних даних щодо схеми та првацює лише саме при помилці, якщо операція успішна, колбек не запуститься
+  error.status = 400
+  next()
+})
+
+contactsSchema.pre('findOneAndUpdate', function (next) {
+  // options.new = true - Це повернення нового об'єкта у `res`
+  this.options.new = true
+  this.options.runValidators = true
+  next()
+})
+
+contactsSchema.post('findOneAndUpdate', (error, data, next) => {
+  error.status = 400
+  next()
+})
 export const Contact = model('contacts', contactsSchema)
