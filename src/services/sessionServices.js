@@ -25,3 +25,5 @@ export const createSession = async (userId) => {
     refreshTokenValidUntil,
   })
 }
+
+export const deleteSession = (value) => Session.deleteOne(value)

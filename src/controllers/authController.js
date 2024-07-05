@@ -2,7 +2,11 @@ import createHttpError from 'http-errors'
 
 import { findUser, signupUser } from '../services/authServices.js'
 import { compareHash } from '../utils/hash.js'
-import { createSession } from '../services/sessionServices.js'
+import {
+  createSession,
+  deleteSession,
+  findSession,
+} from '../services/sessionServices.js'
 
 export const signupUserController = async (req, res) => {
   const { email } = req.body
@@ -59,4 +63,48 @@ export const signinUserController = async (req, res) => {
 
 export const refreshController = async (req, res) => {
   const { refreshToken, sessionId } = req.cookies
+  const currentSession = await findSession({ _id: sessionId, refreshToken })
+
+  console.log(currentSession)
+
+  if (!currentSession) {
+    throw createHttpError(401, 'Session not found')
+  }
+
+  const refreshTokenExpired = Date.now() > currentSession.refreshTokenValidUntil
+
+  if (refreshTokenExpired) {
+    throw createHttpError(401, 'Refresh token expired')
+  }
+
+  const newSession = await createSession(currentSession.userId)
+
+  res.cookie('refreshToken', newSession.refreshToken, {
+    httpOnly: true,
+    expires: newSession.refreshTokenValidUntil,
+  })
+
+  res.cookie('sessionId', newSession._id, {
+    httpOnly: true,
+    expires: newSession.refreshTokenValidUntil,
+  })
+
+  res.status(200).json({
+    status: res.statusCode,
+    message: 'Successfully refreshed a session!',
+    data: {
+      accessToken: newSession.accessToken,
+    },
+  })
+}
+
+export const logoutController = async (req, res) => {
+  if (!req.cookies.sessionId) {
+    throw createHttpError(401, 'Session is not found')
+  }
+  await deleteSession({ _id: req.cookies.sessionId })
+  res.clearCookie('sessionId')
+  res.clearCookie('refreshToken')
+
+  res.status(204).send()
 }
