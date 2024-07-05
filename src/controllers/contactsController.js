@@ -1,10 +1,10 @@
 import {
   createContact,
   getAllContacts,
-  getContactById,
+  getContact,
   deleteContact,
   updateContact,
-} from '../services/contacts.js'
+} from '../services/contactsServices.js'
 import createHttpError from 'http-errors'
 import parsePaginationParams from '../utils/parsePaginationParams.js'
 import parseSortParams from '../utils/parseSortParams.js'
@@ -12,9 +12,11 @@ import parseContactsFilterParams from '../utils/parseContactsFilterParams.js'
 import { allContactFieldList } from '../constants/constants.js'
 
 export const getAllContactsController = async (req, res) => {
+  const { _id: userId } = req.user
+
   const { page, perPage } = parsePaginationParams(req.query)
   const { sortBy, sortOrder } = parseSortParams(req.query, allContactFieldList)
-  const filter = parseContactsFilterParams(req.query)
+  const filter = { ...parseContactsFilterParams(req.query), userId }
   const contacts = await getAllContacts({
     page,
     perPage,
@@ -30,8 +32,9 @@ export const getAllContactsController = async (req, res) => {
 }
 
 export const getContactByIdController = async (req, res) => {
+  const { _id: userId } = req.user
   const { contactId } = req.params
-  const contact = await getContactById(contactId)
+  const contact = await getContact({ _id: contactId, userId })
   if (!contact) {
     throw createHttpError(404, 'There is no such contact, unfortunately')
   }
@@ -44,7 +47,9 @@ export const getContactByIdController = async (req, res) => {
 }
 
 export const createContactController = async (req, res) => {
-  const contact = await createContact(req.body)
+  const { _id: userId } = req.user
+
+  const contact = await createContact({ ...req.body, userId })
 
   res.status(201).json({
     status: res.statusCode,
@@ -52,10 +57,12 @@ export const createContactController = async (req, res) => {
     data: contact,
   })
 }
+
 export const updateContactController = async (req, res) => {
   const { contactId } = req.params
+  const { _id: userId } = req.user
 
-  const contact = await updateContact(contactId, req.body)
+  const contact = await updateContact({ _id: contactId, userId }, req.body)
   if (!contact) {
     throw createHttpError(404, 'There is no such contact, unfortunately')
   }
@@ -69,7 +76,8 @@ export const updateContactController = async (req, res) => {
 
 export const deleteContactController = async (req, res) => {
   const { contactId } = req.params
-  const contact = await deleteContact(contactId)
+  const { _id: userId } = req.user
+  const contact = await deleteContact({ _id: contactId, userId })
 
   if (!contact) {
     throw createHttpError(404, 'There is no such contact, unfortunately')
