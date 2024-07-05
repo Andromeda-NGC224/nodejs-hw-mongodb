@@ -6,6 +6,7 @@ import {
   deleteContactController,
   updateContactController,
 } from '../controllers/contactsController.js'
+
 import ctrlWrapper from '../utils/ctrlWrapper.js'
 import validateBody from '../utils/validateBody.js'
 
@@ -14,8 +15,12 @@ import {
   contactsAddJoiValid,
   contactsPatchJoiValid,
 } from '../validation/contactsJoiValid.js'
+import { authenticate } from '../middlewares/authenticate.js'
 
 const contactsRouter = express.Router()
+
+contactsRouter.use(authenticate)
+// Перевірка логіну на всі приватні маршрути
 
 contactsRouter.get('/', ctrlWrapper(getAllContactsController))
 

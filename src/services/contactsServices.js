@@ -10,8 +10,10 @@ export const getAllContacts = async ({
 }) => {
   const skipPage = (page - 1) * perPage
   const request = Contact.find()
+  if (filter.userId) {
+    request.where('userId').equals(filter.userId)
+  }
   if (filter.type) {
-    console.log('Applying type filter:', filter.type)
     request.where('contactType').equals(filter.type)
   }
   if (filter.isFavourite !== null) {
@@ -38,8 +40,8 @@ export const getAllContacts = async ({
   }
 }
 
-export const getContactById = async (contactId) => {
-  const contact = await Contact.findById(contactId)
+export const getContact = async (filter) => {
+  const contact = await Contact.findOne(filter)
   return contact
 }
 
@@ -47,18 +49,18 @@ export const createContact = async (payload) => {
   const contact = await Contact.create(payload)
   return contact
 }
-export const deleteContact = async (contactId) => {
+export const deleteContact = async (_id) => {
   const contact = await Contact.findOneAndDelete({
-    _id: contactId,
+    _id,
   })
 
   return contact
 }
 
-export const updateContact = async (contactId, payload, options = {}) => {
+export const updateContact = async (_id, payload, options = {}) => {
   const contact = await Contact.findOneAndUpdate(
     {
-      _id: contactId,
+      _id,
     },
     payload,
     {
