@@ -10,6 +10,7 @@ import {
   signinUserController,
   refreshController,
   logoutController,
+  verifyController,
 } from '../controllers/authController.js'
 
 const authRouter = Router()
@@ -19,6 +20,9 @@ authRouter.post(
   validateBody(userSignupJoi),
   ctrlWrapper(signupUserController),
 )
+
+authRouter.get('/verify', ctrlWrapper(verifyController))
+
 authRouter.post(
   '/login',
   validateBody(userSigninJoi),

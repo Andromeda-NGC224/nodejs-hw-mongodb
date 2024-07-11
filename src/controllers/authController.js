@@ -1,12 +1,29 @@
 import createHttpError from 'http-errors'
+import jwt from 'jsonwebtoken'
+import fs from 'node:fs/promises'
+import handlebars from 'handlebars'
+import path from 'node:path'
 
-import { findUser, signupUser } from '../services/authServices.js'
+import {
+  findUser,
+  signupUser,
+  updateVerifyUser,
+} from '../services/authServices.js'
 import { compareHash } from '../utils/hash.js'
 import {
   createSession,
   deleteSession,
   findSession,
 } from '../services/sessionServices.js'
+import { env } from '../utils/env.js'
+
+import { TEMPLATES_DIR } from '../constants/constants.js'
+
+import { sendEmail } from '../utils/sendMail.js'
+
+const appDomain = env('APP_DOMAIN')
+const jwtSecret = env('JWT_SECRET')
+const templateDirHTML = path.join(TEMPLATES_DIR, 'verifyEmail.html')
 
 export const signupUserController = async (req, res) => {
   const { email } = req.body
@@ -16,6 +33,32 @@ export const signupUserController = async (req, res) => {
   }
 
   const newUser = await signupUser(req.body)
+
+  // Потрібно для jsonwebtoken
+  const payload = {
+    id: newUser._id,
+    email,
+  }
+  const token = jwt.sign(payload, jwtSecret, { expiresIn: '24h' })
+
+  // Читаємо, html-файл знаходиться у шаблоні src/templates (для гарного повідомлення у листі)
+  const emailTemplateSource = await fs.readFile(templateDirHTML, 'utf-8')
+  const emailTemplate = handlebars.compile(emailTemplateSource)
+  const html = emailTemplate({
+    projectName: 'GoIT verify email for CONTACTS',
+    appDomain,
+    token,
+  })
+
+  // Потрібно для nodemailer
+  const verifyEmail = {
+    subject: 'Verify Email',
+    to: email,
+    html,
+  }
+
+  await sendEmail(verifyEmail)
+
   const dataUser = {
     name: newUser.name,
     email: newUser.email,
@@ -28,11 +71,36 @@ export const signupUserController = async (req, res) => {
   })
 }
 
+export const verifyController = async (req, res) => {
+  const { token } = req.query
+  try {
+    const { id, email } = jwt.verify(token, jwtSecret)
+    const user = await findUser({ _id: id, email })
+
+    if (!user) {
+      throw createHttpError(404, 'User not found')
+    }
+
+    await updateVerifyUser({ email }, { verify: true })
+
+    res.json({
+      status: 200,
+      message: 'Email verified successfully',
+    })
+  } catch (error) {
+    throw createHttpError(401, error.message)
+  }
+}
+
 export const signinUserController = async (req, res) => {
   const { email, password } = req.body
   const user = await findUser({ email })
   if (!user) {
     throw createHttpError(401, 'Email is not registered')
+  }
+
+  if (!user.verify) {
+    throw createHttpError(401, 'Email is not verified!')
   }
 
   const passwordCompare = await compareHash(password, user.password)
