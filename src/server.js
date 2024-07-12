@@ -10,19 +10,17 @@ import authRouter from './routers/authRouter.js'
 import notFoundMiddleware from './middlewares/notFoundHandler.js'
 import errorHandler from './middlewares/errorHandler.js'
 
+import { PUBLIC_DIR } from './constants/constants.js'
+
 const PORT = Number(env('PORT', '3000'))
 
 const setupServer = () => {
   const app = express()
 
-  app.use(
-    express.json({
-      type: ['application/json', 'application/vnd.api+json'],
-      limit: '100kb',
-    }),
-  )
+  app.use(express.json())
   app.use(cors())
   app.use(cookieParser())
+  app.use(express.static(PUBLIC_DIR))
 
   app.use(
     pino({

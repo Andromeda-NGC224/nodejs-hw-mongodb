@@ -9,6 +9,9 @@ export const findUser = async (filter) => {
 export const updateVerifyUser = async (filter, data) =>
   User.findOneAndUpdate(filter, data)
 
+export const resetUserPassword = async (filter, pass) =>
+  User.findOneAndUpdate(filter, pass)
+
 export const signupUser = async (data) => {
   const { password } = data
   const hashPassword = await hashValue(password)
