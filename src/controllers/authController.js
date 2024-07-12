@@ -6,10 +6,11 @@ import path from 'node:path'
 
 import {
   findUser,
+  resetUserPassword,
   signupUser,
   updateVerifyUser,
 } from '../services/authServices.js'
-import { compareHash } from '../utils/hash.js'
+import { compareHash, hashValue } from '../utils/hash.js'
 import {
   createSession,
   deleteSession,
@@ -24,6 +25,7 @@ import { sendEmail } from '../utils/sendMail.js'
 const appDomain = env('APP_DOMAIN')
 const jwtSecret = env('JWT_SECRET')
 const templateDirHTML = path.join(TEMPLATES_DIR, 'verifyEmail.html')
+const templateDirResetPassHTML = path.join(TEMPLATES_DIR, 'resetPassword.html')
 
 export const signupUserController = async (req, res) => {
   const { email } = req.body
@@ -90,6 +92,88 @@ export const verifyController = async (req, res) => {
   } catch (error) {
     throw createHttpError(401, error.message)
   }
+}
+
+export const resetPasswordController = async (req, res) => {
+  const { token, password } = req.body
+
+  try {
+    const { id, email } = jwt.verify(token, jwtSecret)
+    const user = await findUser({ _id: id, email })
+
+    if (!user) {
+      throw createHttpError(404, 'User not found')
+    }
+
+    const encryptedPassword = await hashValue(password)
+
+    await resetUserPassword({ email }, { password: encryptedPassword })
+
+    res.json({
+      message: 'Password was successfully reset!',
+      status: 200,
+      data: {},
+    })
+  } catch (error) {
+    if (
+      error.name === 'TokenExpiredError' ||
+      error.name === 'JsonWebTokenError'
+    ) {
+      throw createHttpError(401, 'Token is expired or invalid.')
+    }
+    throw createHttpError(401, error.message)
+  }
+}
+
+export const resetPasswordMessageController = async (req, res) => {
+  res.status(200).json({
+    message: 'Thank you! Now u can start changing your password.',
+  })
+}
+
+export const requestResetEmailController = async (req, res) => {
+  const { email } = req.body
+
+  const user = await findUser({ email })
+
+  if (!user) {
+    throw createHttpError(404, 'User not found')
+  }
+
+  // Потрібно для jsonwebtoken
+  const payload = {
+    id: user._id,
+    email,
+  }
+
+  const token = jwt.sign(payload, jwtSecret, { expiresIn: '5m' })
+
+  // Читаємо, html-файл знаходиться у шаблоні src/templates (для гарного повідомлення у листі)
+  const emailTemplateSource = await fs.readFile(
+    templateDirResetPassHTML,
+    'utf-8',
+  )
+  const emailTemplate = handlebars.compile(emailTemplateSource)
+  const html = emailTemplate({
+    projectName: 'GoIT reset password for CONTACTS',
+    appDomain,
+    token,
+  })
+
+  // Потрібно для nodemailer
+  const resetPassword = {
+    subject: 'Reset Password',
+    to: email,
+    html,
+  }
+
+  await sendEmail(resetPassword)
+
+  res.json({
+    message: 'Reset password email was successfully sent!',
+    status: 200,
+    data: {},
+  })
 }
 
 export const signinUserController = async (req, res) => {

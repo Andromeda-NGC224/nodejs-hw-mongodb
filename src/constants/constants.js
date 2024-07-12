@@ -18,3 +18,8 @@ export const REFRESH_TOKEN_LIFETIME = 30 * 24 * 60 * 60 * 1000
 
 // resolve спочатку об'єднує шляхи, а потім автоматично підставляє до початку абсолютний шлях.
 export const TEMPLATES_DIR = path.resolve('src', 'templates')
+
+export const TEMP_UPLOAD_DIR = path.resolve('src', 'temp')
+export const PUBLIC_DIR = path.resolve('src', 'public')
+
+export const PUBLIC_PHOTO_DIR = path.resolve('src', 'public', 'photo')

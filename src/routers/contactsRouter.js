@@ -16,6 +16,7 @@ import {
   contactsPatchJoiValid,
 } from '../validation/contactsJoiValid.js'
 import { authenticate } from '../middlewares/authenticate.js'
+import { upload } from '../middlewares/upload.js'
 
 const contactsRouter = express.Router()
 
@@ -26,6 +27,7 @@ contactsRouter.get('/', ctrlWrapper(getAllContactsController))
 
 contactsRouter.post(
   '/',
+  upload.single('photo'),
   validateBody(contactsAddJoiValid),
   ctrlWrapper(createContactController),
 )
@@ -38,6 +40,7 @@ contactsRouter.get(
 
 contactsRouter.patch(
   '/:contactId',
+  upload.single('photo'),
   isValidId,
   validateBody(contactsPatchJoiValid),
   ctrlWrapper(updateContactController),
