@@ -11,6 +11,7 @@ import notFoundMiddleware from './middlewares/notFoundHandler.js'
 import errorHandler from './middlewares/errorHandler.js'
 
 import { PUBLIC_DIR } from './constants/constants.js'
+import { swaggerDocs } from './middlewares/swaggerDocs.js'
 
 const PORT = Number(env('PORT', '3000'))
 
@@ -30,8 +31,9 @@ const setupServer = () => {
     }),
   )
 
+  app.use('/api-docs', swaggerDocs())
   app.use('/auth', authRouter)
-  app.use(`/contacts`, contactsRouter)
+  app.use('/contacts', contactsRouter)
 
   app.get('/', (req, res) => {
     res.json({ message: 'Living' })
