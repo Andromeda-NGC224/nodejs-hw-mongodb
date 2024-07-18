@@ -3,7 +3,11 @@ import { Router } from 'express'
 import ctrlWrapper from '../utils/ctrlWrapper.js'
 import validateBody from '../utils/validateBody.js'
 
-import { userSigninJoi, userSignupJoi } from '../validation/userJoiValid.js'
+import {
+  googleOAuthCodeJoi,
+  userSigninJoi,
+  userSignupJoi,
+} from '../validation/userJoiValid.js'
 
 import {
   signupUserController,
@@ -14,6 +18,8 @@ import {
   requestResetEmailController,
   resetPasswordMessageController,
   resetPasswordController,
+  getGoogleOAuthController,
+  authGoogleController,
 } from '../controllers/authController.js'
 import {
   requestResetEmailJoi,
@@ -29,6 +35,14 @@ authRouter.post(
 )
 
 authRouter.get('/verify', ctrlWrapper(verifyController))
+
+authRouter.get('/get-oath-url', ctrlWrapper(getGoogleOAuthController))
+
+authRouter.post(
+  '/confirm-google-oauth',
+  validateBody(googleOAuthCodeJoi),
+  ctrlWrapper(authGoogleController),
+)
 
 authRouter.get('/reset-password', ctrlWrapper(resetPasswordMessageController))
 

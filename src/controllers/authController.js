@@ -21,6 +21,12 @@ import { env } from '../utils/env.js'
 import { TEMPLATES_DIR } from '../constants/constants.js'
 
 import { sendEmail } from '../utils/sendMail.js'
+import {
+  generateAuthUrl,
+  getGoogleOAuthName,
+  validateGoogleOAuthCode,
+} from '../utils/googleOAuth2.js'
+import { randomBytes } from 'node:crypto'
 
 const appDomain = env('APP_DOMAIN')
 const jwtSecret = env('JWT_SECRET')
@@ -259,4 +265,59 @@ export const logoutController = async (req, res) => {
   res.clearCookie('refreshToken')
 
   res.status(204).send()
+}
+
+export const getGoogleOAuthController = async (req, res) => {
+  const url = generateAuthUrl()
+
+  res.json({
+    status: 200,
+    message: 'Google OAuth url generate successfully',
+    data: {
+      url,
+    },
+  })
+}
+
+export const authGoogleController = async (req, res) => {
+  const { code } = req.body
+  const ticket = await validateGoogleOAuthCode(code)
+  const userPayload = ticket.getPayload()
+  if (!userPayload) {
+    throw createHttpError(401, 'No data in authGoogleController')
+  }
+
+  let user = await findUser({ email: userPayload.email })
+
+  if (!user) {
+    // Ім'я є у даних з https://www.googleapis.com/auth/userinfo.profile (userPayload) такі, як given_name та family_name у функції getGoogleOAuthName
+
+    const signupData = {
+      email: userPayload.email,
+      name: getGoogleOAuthName(userPayload),
+      password: randomBytes(10),
+    }
+
+    user = await signupUser(signupData)
+  }
+
+  const sessionValue = await createSession(user._id)
+
+  res.cookie('refreshToken', sessionValue.refreshToken, {
+    httpOnly: true,
+    expires: sessionValue.refreshTokenValidUntil,
+  })
+
+  res.cookie('sessionId', sessionValue._id, {
+    httpOnly: true,
+    expires: sessionValue.refreshTokenValidUntil,
+  })
+
+  res.status(200).json({
+    status: res.statusCode,
+    message: 'Successfully logged in an user!',
+    data: {
+      accessToken: sessionValue.accessToken,
+    },
+  })
 }
