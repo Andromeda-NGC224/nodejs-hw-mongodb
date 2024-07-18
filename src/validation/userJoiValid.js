@@ -16,3 +16,7 @@ export const userSigninJoi = Joi.object({
   email: Joi.string().pattern(emailRegex).min(3).required(),
   password: Joi.string().required(),
 })
+
+export const googleOAuthCodeJoi = Joi.object({
+  code: Joi.string().required(),
+})
