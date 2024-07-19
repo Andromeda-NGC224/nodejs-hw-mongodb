@@ -13,7 +13,7 @@ content:
           example: 401
         message:
           type: string
-          example: UnauthorizedError
+          example: Access token expired
         data:
           type: object
           required:
@@ -21,4 +21,4 @@ content:
           properties:
             message:
               type: string
-              example: 'Access token expired'
+              example: 'Email is not registered'
