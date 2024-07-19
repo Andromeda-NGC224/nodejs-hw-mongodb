@@ -1,0 +1,45 @@
+tags:
+  - Auth
+summary: Reset user's password
+operationId: reset-pwd
+description: 'Reset user password'
+security: []
+requestBody:
+  content:
+    application/json:
+      schema:
+        type: object
+        required:
+          - token
+          - password
+        properties:
+          password:
+            description: "User's password"
+            type: string
+            example: '1234567'
+          token:
+            description: "User's token"
+            type: string
+            example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2OWE1ZDU3YWQ1YTliNTU4MTlhZGFiZSIsImVtYWlsIjoibm9uZXA3NTIxMEByZWVic2QuY29tIiwiaWF0IjoxNzIxMzk1MTc0LCJleHAiOjE3MjEzOTU0NzR9.EIJhWsbHEvYZCxux_z1tqjfnIxLf9UAkq7ClZcqSCiU'
+responses:
+  '200':
+    description: Password was successfully reset!
+    content:
+      application/json:
+        schema:
+          type: object
+          required:
+            - status
+            - message
+            - data
+          properties:
+            status:
+              type: integer
+              example: 200
+            message:
+              type: string
+              example: Password was successfully reset!
+            data:
+              type: object
+  '401':
+    $ref: '../../../components/responses/401.yaml'
